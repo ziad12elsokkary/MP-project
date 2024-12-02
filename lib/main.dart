@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:hedieaty3/views/pages/event_list_page.dart';
 import 'package:hedieaty3/views/pages/home_page.dart';
 import 'package:hedieaty3/views/pages/loading_page.dart';
 import 'package:hedieaty3/views/pages/login_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hedieaty3/views/pages/profile_page.dart';
 
 
 void main() async{
@@ -26,7 +28,10 @@ class MyApp extends StatelessWidget {
       initialRoute: '/', // Starting point is LoadingPage
       routes: {
         '/': (context) => const LoadingPage(), // LoadingPage first
-        '/login': (context) => const LoginPage(), // After LoadingPage, navigate to LoginPage
+        '/login': (context) => const LoginPage(),
+          '/profile': (context) => const ProfilePage(),
+          '/add-event': (context) => const AddEventPage(), // Future implementatio
+// After LoadingPage, navigate to LoginPage
       },
     );
   }
