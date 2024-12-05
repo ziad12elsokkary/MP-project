@@ -16,6 +16,7 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController(); // Controller for phone number
   bool isLoading = false;
 
   @override
@@ -24,6 +25,7 @@ class _SignupPageState extends State<SignupPage> {
     emailController.dispose();
     passwordController.dispose();
     nameController.dispose();
+    phoneController.dispose(); // Dispose the phone controller
   }
 
   void signupUser() async {
@@ -35,6 +37,8 @@ class _SignupPageState extends State<SignupPage> {
       email: emailController.text,
       password: passwordController.text,
       name: nameController.text,
+      phone: phoneController.text,
+      profilePic: null, // Pass phone number to the signup method
     );
 
     setState(() {
@@ -44,14 +48,13 @@ class _SignupPageState extends State<SignupPage> {
     if (res == "success") {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => const HomePage(),
+          builder: (context) =>  HomePage(),
         ),
       );
     } else {
-      showSnackBar(context, res); // Show error message
+      showSnackBar(context, res); // Show error message if signup fails
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -65,28 +68,27 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               SizedBox(
                 height: height / 2.8,
-                // Remove background image here
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 child: TextField(
                   controller: nameController,
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person, color: Colors.black54),
+                    prefixIcon: const Icon(Icons.person, color: Colors.black54),
                     hintText: 'Enter your name',
-                    hintStyle: TextStyle(color: Colors.black45, fontSize: 18),
+                    hintStyle: const TextStyle(color: Colors.black45, fontSize: 18),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide.none,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     border: InputBorder.none,
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                      borderSide: const BorderSide(color: Colors.blue, width: 2),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     filled: true,
-                    fillColor: Color(0xFFedf0f8),
-                    contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    fillColor: const Color(0xFFedf0f8),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                   ),
                 ),
               ),
@@ -95,21 +97,21 @@ class _SignupPageState extends State<SignupPage> {
                 child: TextField(
                   controller: emailController,
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.email, color: Colors.black54),
+                    prefixIcon: const Icon(Icons.email, color: Colors.black54),
                     hintText: 'Enter your email',
-                    hintStyle: TextStyle(color: Colors.black45, fontSize: 18),
+                    hintStyle: const TextStyle(color: Colors.black45, fontSize: 18),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide.none,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     border: InputBorder.none,
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                      borderSide: const BorderSide(color: Colors.blue, width: 2),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     filled: true,
-                    fillColor: Color(0xFFedf0f8),
-                    contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    fillColor: const Color(0xFFedf0f8),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                   ),
                 ),
               ),
@@ -119,21 +121,45 @@ class _SignupPageState extends State<SignupPage> {
                   controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.lock, color: Colors.black54),
+                    prefixIcon: const Icon(Icons.lock, color: Colors.black54),
                     hintText: 'Enter your password',
-                    hintStyle: TextStyle(color: Colors.black45, fontSize: 18),
+                    hintStyle: const TextStyle(color: Colors.black45, fontSize: 18),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide.none,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     border: InputBorder.none,
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                      borderSide: const BorderSide(color: Colors.blue, width: 2),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     filled: true,
-                    fillColor: Color(0xFFedf0f8),
-                    contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    fillColor: const Color(0xFFedf0f8),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                child: TextField(
+                  controller: phoneController, // Phone number input
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.phone, color: Colors.black54),
+                    hintText: 'Enter your phone number',
+                    hintStyle: const TextStyle(color: Colors.black45, fontSize: 18),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    border: InputBorder.none,
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.blue, width: 2),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFedf0f8),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                   ),
                 ),
               ),
@@ -150,9 +176,11 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       color: Colors.blue,
                     ),
-                    child: Text(
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
                       "Sign Up",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -178,7 +206,7 @@ class _SignupPageState extends State<SignupPage> {
                       " Login",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  )
+                  ),
                 ],
               ),
             ],

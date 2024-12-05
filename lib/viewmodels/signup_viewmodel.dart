@@ -7,6 +7,7 @@ class SignupViewModel extends ChangeNotifier {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController(); // Phone controller
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
@@ -16,6 +17,7 @@ class SignupViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Sign up method
   void signupUser(BuildContext context) async {
     _setLoading(true);
 
@@ -23,6 +25,8 @@ class SignupViewModel extends ChangeNotifier {
       email: emailController.text,
       password: passwordController.text,
       name: nameController.text,
+      phone: phoneController.text,
+      profilePic: null, // Include phone number during signup
     );
 
     _setLoading(false);
@@ -30,7 +34,7 @@ class SignupViewModel extends ChangeNotifier {
     if (res == "success") {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => const HomePage(),
+          builder: (context) =>  HomePage(),
         ),
       );
     } else {
@@ -43,6 +47,7 @@ class SignupViewModel extends ChangeNotifier {
     nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    phoneController.dispose(); // Dispose phone controller as well
     super.dispose();
   }
 }

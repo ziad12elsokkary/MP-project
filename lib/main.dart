@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:hedieaty3/views/pages/event_add_page.dart';
 import 'package:hedieaty3/views/pages/event_list_page.dart';
 import 'package:hedieaty3/views/pages/home_page.dart';
 import 'package:hedieaty3/views/pages/loading_page.dart';
@@ -30,7 +31,8 @@ class MyApp extends StatelessWidget {
         '/': (context) => const LoadingPage(), // LoadingPage first
         '/login': (context) => const LoginPage(),
           '/profile': (context) => const ProfilePage(),
-          '/add-event': (context) => const AddEventPage(), // Future implementatio
+          '/add-event': (context) => const AddEventPage(),
+        '/event-list': (context) => const EventListPage(),// Future implementatio
 // After LoadingPage, navigate to LoginPage
       },
     );

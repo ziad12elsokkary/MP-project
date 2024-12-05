@@ -1,116 +1,153 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-
-class AddEventPage extends StatefulWidget {
-  const AddEventPage({super.key});
+import 'package:hedieaty3/views/pages/event_add_page.dart';
+import 'package:hedieaty3/viewmodels/event_list_viewmodel.dart';
+class EventListPage extends StatefulWidget {
+  const EventListPage({super.key});
 
   @override
-  _AddEventPageState createState() => _AddEventPageState();
+  State<EventListPage> createState() => _EventListPageState();
 }
 
-class _AddEventPageState extends State<AddEventPage> {
-  final TextEditingController eventNameController = TextEditingController();
-  final TextEditingController giftNameController = TextEditingController();
-  DateTime? selectedDate;
+class _EventListPageState extends State<EventListPage> {
+  List<Map<String, dynamic>> events = [];
 
-  // Function to pick a date using DatePicker
-  Future<void> pickDate(BuildContext context) async {
-    DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (pickedDate != null) {
-      setState(() {
-        selectedDate = pickedDate;
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    fetchUserEvents();
   }
 
-  // Function to add event to Firestore and return to HomePage
-  Future<void> addEvent() async {
-    if (selectedDate != null && eventNameController.text.isNotEmpty && giftNameController.text.isNotEmpty) {
+  // Fetch events for the logged-in user from Firestore
+  Future<void> fetchUserEvents() async {
+    try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
-        try {
-          // Store the event data in Firestore under the user's UID
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(currentUser.uid)  // Use the current user's UID
-              .collection('events')
-              .add({
-            'eventName': eventNameController.text,
-            'giftName': giftNameController.text,
-            'date': Timestamp.fromDate(selectedDate!),  // Store the date as a Timestamp
-          });
+        final userEvents = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('events')
+            .get();
 
-          // Clear the fields after adding the event
-          eventNameController.clear();
-          giftNameController.clear();
-          setState(() {
-            selectedDate = null;
-          });
-
-          // Show a snackbar to indicate success
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Event added successfully")),
-          );
-
-          // Pop and return to HomePage with success flag
-          Navigator.pop(context, true);
-        } catch (e) {
-          print("Error adding event: $e");
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error adding event: $e")),
-          );
-        }
+        setState(() {
+          events = userEvents.docs.map((doc) {
+            return {
+              'id': doc.id,
+              'eventName': doc['eventName'],
+              'giftName': doc['giftName'],
+              'date': (doc['date'] as Timestamp).toDate().toString(),
+            };
+          }).toList();
+        });
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill in all fields and select a date")),
-      );
+    } catch (e) {
+      print("Error fetching events: $e");
     }
   }
+
+  // Handle menu item selection for profile and pledged gifts
+  // void handleMenuSelection(BuildContext context, String value) {
+  //   if (value == "profile") {
+  //     Navigator.pushNamed(context, '/profile');
+  //   } else if (value == "pledged_gifts") {
+  //     Navigator.pushNamed(context, '/pledged-gifts');
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Add Event"),
+        title: const Text("Your Events"),
+        centerTitle: true,
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              handleMenuSelection(context, value);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: "profile",
+                child: Text("Profile"),
+              ),
+              const PopupMenuItem(
+                value: "pledged_gifts",
+                child: Text("Pledged Gifts"),
+              ),
+              const PopupMenuItem(
+                value: "your_events",
+                child: Text("Your Events"),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: eventNameController,
-              decoration: const InputDecoration(labelText: 'Event Name'),
-            ),
-            TextField(
-              controller: giftNameController,
-              decoration: const InputDecoration(labelText: 'Gift Name'),
+            const Text(
+              "Your Events",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            Row(
-              children: [
-                Text(selectedDate == null
-                    ? "Select Event Date"
-                    : "${selectedDate?.toLocal()}".split(' ')[0]),
-                IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: () => pickDate(context),
+            Expanded(
+              child: events.isEmpty
+                  ? const Center(
+                child: Text(
+                  "No events yet. Add some!",
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: addEvent,
-              child: const Text("Add Event"),
+              )
+                  : ListView.builder(
+                itemCount: events.length,
+                itemBuilder: (context, index) {
+                  final event = events[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      title: Text(event['eventName']),
+                      subtitle: Text(event['date']),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () {
+                          // Delete event from Firestore using event ID
+                          FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(FirebaseAuth.instance.currentUser?.uid)
+                              .collection('events')
+                              .doc(event['id'])  // Use event ID
+                              .delete()
+                              .then((_) {
+                            setState(() {
+                              events.removeAt(index);
+                            });
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          // When returning from AddEventPage, the page will be refreshed
+          bool eventAdded = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddEventPage()),
+          );
+
+          if (eventAdded) {
+            fetchUserEvents();  // Refresh the events list after adding an event
+          }
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
