@@ -3,10 +3,12 @@ import 'package:hedieaty3/viewmodels/home_viewmodel.dart';
 import 'package:hedieaty3/models/friend.dart';
 import 'package:hedieaty3/viewmodels/event_list_viewmodel.dart';
 
+import 'event_list_page.dart';
+
 class HomePage extends StatelessWidget {
 
   final HomePageViewModel viewModel = HomePageViewModel();
-  final EventListviewModel eventModel = EventListviewModel();
+  final EventListViewModel eventModel = EventListViewModel();
 
   @override
   Widget build(BuildContext context) {
