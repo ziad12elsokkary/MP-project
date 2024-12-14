@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hedieaty3/models/event.dart';
@@ -27,16 +28,55 @@ class _HomePageState extends State<HomePage> {
 
   // Load friends from Firestore
   Future<void> _loadFriends() async {
-    final userId = 'currentUserId'; // Replace with actual user ID logic
-    final friendsSnapshot = await _firestore
-        .collection('friends')
-        .where('userid', isEqualTo: userId)
-        .get();
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
 
-    setState(() {
-      _friendsList = friendsSnapshot.docs.map((doc) => Friend.fromMap(doc.data())).toList();
-      _filteredFriends = _friendsList;
-    });
+    try {
+      // Step 1: Fetch the list of friend IDs from the 'friends' collection
+      final friendsSnapshot = await _firestore
+          .collection('friends')
+          .where('userid', isEqualTo: userId)
+          .get();
+
+      final friendIds = friendsSnapshot.docs
+          .map((doc) => doc['friendid'] as String)
+          .toList();
+
+      if (friendIds.isEmpty) {
+        setState(() {
+          _friendsList = [];
+          _filteredFriends = [];
+        });
+        return;
+      }
+
+      // Step 2: Fetch detailed friend data from the 'users' collection
+      final usersSnapshot = await _firestore
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: friendIds)
+          .get();
+
+      final friendsData = usersSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return Friend(
+          friendId: doc.id, // Document ID is the friend ID
+          friendName: data['name'],
+          profilePictureUrl: data['profilePictureUrl'] ?? '',
+          userId: userId, // The user who added this friend
+        );
+      }).toList();
+
+      // Update the state with the fetched friend data
+      setState(() {
+        _friendsList = friendsData;
+        _filteredFriends = _friendsList;
+      });
+    } catch (e) {
+      print("Error loading friends: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error loading friends.")),
+      );
+    }
   }
 
   // Filter friends based on search query
@@ -89,9 +129,16 @@ class _HomePageState extends State<HomePage> {
 
   // Add friend by phone number
   Future<void> _addFriend(String phone) async {
-    final userId = 'currentUserId'; // Replace with actual user ID logic
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User not logged in.")),
+      );
+      return;
+    }
 
     try {
+      // Look up the user by their phone number
       final querySnapshot = await _firestore
           .collection('users')
           .where('phone', isEqualTo: phone)
@@ -106,12 +153,35 @@ class _HomePageState extends State<HomePage> {
       }
 
       final userDoc = querySnapshot.docs.first;
-      final friendId = userDoc.id;
-      final friendName = userDoc['name'];
-      final profilePictureUrl = userDoc['profilePictureUrl'];
+      final friendId = userDoc.id; // Use userDoc.id as the friend ID
+
+      if (friendId == userId) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You cannot add yourself as a friend.")),
+        );
+        return;
+      }
+
+      // Check if the friend is already in the 'friends' collection
+      final existingFriendQuery = await _firestore
+          .collection('friends')
+          .where('userid', isEqualTo: userId)
+          .where('friendid', isEqualTo: friendId)
+          .limit(1)
+          .get();
+
+      if (existingFriendQuery.docs.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("This friend is already added.")),
+        );
+        return;
+      }
 
       // Add the friend relationship to the 'friends' collection
-      final newFriend = Friend(friendId: friendId, friendName: friendName, profilePictureUrl: profilePictureUrl);
+      final friendName = userDoc['name'];
+      final profilePictureUrl = userDoc['profilePictureUrl'];
+      final newFriend = Friend(friendId: friendId, friendName: friendName, profilePictureUrl: profilePictureUrl, userId: userId);
+
       await _firestore.collection('friends').add(newFriend.toMap(userId));
 
       setState(() {
@@ -129,15 +199,30 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+
+
+
+
+
   // Count upcoming events for a friend
   Future<int> _countUpcomingEvents(String friendId) async {
-    final eventsSnapshot = await _firestore
-        .collection('events')
-        .where('friendId', isEqualTo: friendId)
-        .where('eventDate', isGreaterThanOrEqualTo: DateTime.now()) // Adjust date condition as needed
-        .get();
-    return eventsSnapshot.size;
+    // final userId = friendId;
+    try {
+      // Fetch the user's events directly using the friendId from the 'users' collection
+      final eventsSnapshot = await _firestore
+          .collection('users')
+          .where('userid', isEqualTo: friendId)
+          .where('eventDate', isGreaterThanOrEqualTo: DateTime.now()) // Adjust date condition as needed
+          .get();
+
+      return eventsSnapshot.size;  // Return the number of events found
+    } catch (e) {
+      print("Error counting upcoming events: $e");
+      return 0;  // Return 0 if there's an error
+    }
   }
+
+
 
   // Navigate to the friend's events page
   void _onFriendTapped(Friend friend) {
@@ -202,7 +287,7 @@ class _HomePageState extends State<HomePage> {
               itemBuilder: (context, index) {
                 final friend = _filteredFriends[index];
                 return FutureBuilder<int>(
-                  future: _countUpcomingEvents(friend.friendId),
+                  future: _countUpcomingEvents(friend.friendId), // Use the userId for counting events
                   builder: (context, snapshot) {
                     String eventCountText;
                     if (snapshot.connectionState == ConnectionState.done) {
@@ -212,7 +297,7 @@ class _HomePageState extends State<HomePage> {
                             ? "$eventCount upcoming events"
                             : "No upcoming events";
                       } else {
-                        eventCountText = "No upcoming events";
+                        eventCountText = "Loading...";
                       }
                     } else {
                       eventCountText = "Loading...";

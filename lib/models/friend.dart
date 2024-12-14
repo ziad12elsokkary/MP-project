@@ -1,30 +1,24 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Friend {
-  final String friendId; // ID of the friend
-  final String friendName; // Name of the friend
-  final String profilePictureUrl; // Profile picture URL (if needed)
+  final String friendId;
+  final String friendName;
+  final String profilePictureUrl;
+  final String userId;
+  final int eventCount; // New property for event count
 
   Friend({
     required this.friendId,
     required this.friendName,
     required this.profilePictureUrl,
+    required this.userId,
+    this.eventCount = 0, // Default value is 0
   });
 
-  factory Friend.fromMap(Map<String, dynamic> data) {
-    return Friend(
-      friendId: data['friendid'],
-      friendName: data['friendName'],
-      profilePictureUrl: data['profilePictureUrl'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toMap(String userId) {
+  Map<String, dynamic> toMap(String currentUserId) {
     return {
-      'userid': userId, // Add the user ID who added the friend
       'friendid': friendId,
       'friendName': friendName,
       'profilePictureUrl': profilePictureUrl,
+      'userid': currentUserId,
     };
   }
 }
