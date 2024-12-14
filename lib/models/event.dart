@@ -6,7 +6,6 @@ class Event {
   final String giftName;
   final DateTime eventDate;
   String status; // New field for event status
-  final String userId; // New field to refer to the user who added the event
 
   Event({
     required this.id,
@@ -14,7 +13,6 @@ class Event {
     required this.giftName,
     required this.eventDate,
     this.status = "Upcoming", // Default status
-    required this.userId,
   });
 
   factory Event.fromMap(Map<String, dynamic> data) {
@@ -31,7 +29,6 @@ class Event {
       giftName: data['giftName'],
       eventDate: parsedDate,
       status: determineStatus(parsedDate), // Assign status based on date
-      userId: data['userId'],
     );
   }
 
@@ -42,7 +39,6 @@ class Event {
       'giftName': giftName,
       'eventDate': eventDate.toIso8601String(), // Convert DateTime to ISO 8601 String
       'status': status,
-      'userId': userId, // Include the user ID for reference
     };
   }
 
