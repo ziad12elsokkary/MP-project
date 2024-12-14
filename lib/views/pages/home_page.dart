@@ -206,19 +206,19 @@ class _HomePageState extends State<HomePage> {
 
   // Count upcoming events for a friend
   Future<int> _countUpcomingEvents(String friendId) async {
-    // final userId = friendId;
     try {
-      // Fetch the user's events directly using the friendId from the 'users' collection
+      // Access the events subcollection within the specific friend's document
       final eventsSnapshot = await _firestore
           .collection('users')
-          .where('userid', isEqualTo: friendId)
-          .where('eventDate', isGreaterThanOrEqualTo: DateTime.now()) // Adjust date condition as needed
+          .doc(friendId) // Get the document for the friend
+          .collection('events') // Access the events subcollection
+          .where('date', isGreaterThanOrEqualTo: DateTime.now()) // Filter upcoming events
           .get();
 
-      return eventsSnapshot.size;  // Return the number of events found
+      return eventsSnapshot.size; // Return the number of events
     } catch (e) {
       print("Error counting upcoming events: $e");
-      return 0;  // Return 0 if there's an error
+      return 0; // Return 0 if there's an error
     }
   }
 
