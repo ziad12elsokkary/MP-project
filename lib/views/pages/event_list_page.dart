@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hedieaty3/models/event.dart';
 import 'package:hedieaty3/views/pages/event_add_page.dart';
 import 'package:hedieaty3/viewmodels/event_list_viewmodel.dart';
 import 'package:hedieaty3/views/pages/event_edit.dart';
+import 'package:hedieaty3/services/firebase_service.dart';
 
 class EventListPage extends StatefulWidget {
   const EventListPage({super.key});
@@ -21,7 +23,6 @@ class _EventListPageState extends State<EventListPage> {
     fetchUserEvents();
   }
 
-  // Fetch events for the logged-in user from Firestore
   Future<void> fetchUserEvents() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
@@ -35,14 +36,7 @@ class _EventListPageState extends State<EventListPage> {
         setState(() {
           events = userEvents.docs.map((doc) {
             DateTime date = (doc['date'] as Timestamp).toDate();
-            String status;
-            if (date.isAfter(DateTime.now().add(Duration(days: 7)))) {
-              status = 'Upcoming';
-            } else if (date.isAfter(DateTime.now())) {
-              status = 'Current';
-            } else {
-              status = 'Past';
-            }
+            String status = Event.determineStatus(date);
 
             return {
               'id': doc.id,
@@ -59,7 +53,6 @@ class _EventListPageState extends State<EventListPage> {
     }
   }
 
-  // Handle delete event
   Future<void> deleteEvent(String eventId, int index) async {
     try {
       await FirebaseFirestore.instance
@@ -151,15 +144,14 @@ class _EventListPageState extends State<EventListPage> {
                           IconButton(
                             icon: const Icon(Icons.edit),
                             onPressed: () {
-                              // Navigate to the event edit page
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => EventEditPage(event: event),
+                                  builder: (context) => EventEditPage(eventId: event['id']), // Pass the Firestore document ID
                                 ),
                               ).then((updatedEvent) {
                                 if (updatedEvent != null) {
-                                  fetchUserEvents();  // Refresh the events list
+                                  fetchUserEvents(); // Refresh the events list after an update
                                 }
                               });
                             },
@@ -182,7 +174,7 @@ class _EventListPageState extends State<EventListPage> {
           );
 
           if (eventAdded) {
-            fetchUserEvents();  // Refresh the events list after adding an event
+            fetchUserEvents(); // Refresh the events list after adding an event
           }
         },
         child: const Icon(Icons.add),
@@ -190,20 +182,19 @@ class _EventListPageState extends State<EventListPage> {
     );
   }
 
-}
-
-void handleMenuSelection(BuildContext context, String value) {
-  switch (value) {
-    case "profile":
-      Navigator.pushNamed(context, '/profile');
-      break;
-    case "pledged_gifts":
-      Navigator.pushNamed(context, '/pledged-gifts');
-      break;
-    case "your_events":
-      Navigator.pushNamed(context, '/event-list');
-      break;
-    default:
-      break;
+  void handleMenuSelection(BuildContext context, String value) {
+    switch (value) {
+      case "profile":
+        Navigator.pushNamed(context, '/profile');
+        break;
+      case "pledged_gifts":
+        Navigator.pushNamed(context, '/pledged-gifts');
+        break;
+      case "your_events":
+        Navigator.pushNamed(context, '/event-list');
+        break;
+      default:
+        break;
+    }
   }
 }

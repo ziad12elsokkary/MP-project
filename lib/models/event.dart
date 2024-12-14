@@ -16,12 +16,19 @@ class Event {
   });
 
   factory Event.fromMap(Map<String, dynamic> data) {
+    DateTime parsedDate;
+    try {
+      parsedDate = DateTime.parse(data['eventDate']);
+    } catch (e) {
+      parsedDate = DateTime.now(); // Use current date if eventDate is null or invalid
+    }
+
     return Event(
       id: data['id'],
       eventName: data['eventName'],
       giftName: data['giftName'],
-      eventDate: (data['eventDate'] as Timestamp).toDate(),
-      status: determineStatus((data['eventDate'] as Timestamp).toDate()), // Assign status based on date
+      eventDate: parsedDate,
+      status: determineStatus(parsedDate), // Assign status based on date
     );
   }
 
@@ -30,7 +37,7 @@ class Event {
       'id': id,
       'eventName': eventName,
       'giftName': giftName,
-      'eventDate': eventDate,
+      'eventDate': eventDate.toIso8601String(), // Convert DateTime to ISO 8601 String
       'status': status,
     };
   }

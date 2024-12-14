@@ -68,6 +68,16 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
+                onPressed: () async {
+                  final result = await Navigator.pushNamed(context, '/editProfile', arguments: _userModel);
+                  if (result == true) {
+                    _loadProfile(); // Reload profile after update
+                  }
+                },
+                child: const Text("Edit Profile"),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
                 onPressed: () {
                   // Call the signOut function from firebase_service
                   _authMethod.signOut(
