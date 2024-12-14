@@ -229,9 +229,13 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => FriendEventsPage(friendId: friend.friendId),
+        builder: (context) => FriendEventsPage(
+          friendId: friend.friendId,
+          friendName: friend.friendName, // Ensure you pass the friend's name here
+        ),
       ),
     );
+
   }
 
   @override

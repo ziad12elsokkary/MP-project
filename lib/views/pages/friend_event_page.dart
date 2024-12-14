@@ -4,8 +4,9 @@ import 'package:hedieaty3/models/event.dart';
 
 class FriendEventsPage extends StatelessWidget {
   final String friendId;
+  final String friendName;
 
-  FriendEventsPage({required this.friendId});
+  FriendEventsPage({required this.friendId, required this.friendName});
 
   Future<List<Event>> fetchFriendEvents() async {
     final firestore = FirebaseFirestore.instance;
@@ -33,7 +34,7 @@ class FriendEventsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Friend's Events"),
+        title: Text("$friendName's Events"),
       ),
       body: FutureBuilder<List<Event>>(
         future: fetchFriendEvents(),
