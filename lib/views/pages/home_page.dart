@@ -259,10 +259,7 @@ class _HomePageState extends State<HomePage> {
                 value: "your_events",
                 child: Text("Your Events"),
               ),
-              const PopupMenuItem(
-                value: "your_gifts",
-                child: Text("Your Gifts"),
-              ),
+
             ],
           ),
         ],

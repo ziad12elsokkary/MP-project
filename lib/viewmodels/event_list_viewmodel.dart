@@ -99,9 +99,6 @@ class EventListViewModel {
       case "your_events":
         Navigator.pushNamed(context, '/event-list');
         break;
-      case "your_gifts":
-        Navigator.pushNamed(context, '/gift-list');
-        break;
       default:
         break;
     }

@@ -7,9 +7,10 @@ import 'package:hedieaty3/views/pages/gift_list_page.dart';
 import 'package:hedieaty3/views/pages/home_page.dart';
 import 'package:hedieaty3/views/pages/loading_page.dart';
 import 'package:hedieaty3/views/pages/login_page.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hedieaty3/views/pages/pledged_gifts_page.dart';
 import 'package:hedieaty3/views/pages/profile_page.dart';
 import 'package:hedieaty3/views/pages/edit_profile.dart'; // Import EditProfilePage
+import 'package:hedieaty3/models/gift.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,8 @@ class MyApp extends StatelessWidget {
         ), // New route for editing profile
         '/add-event': (context) => const AddEventPage(),
         '/event-list': (context) => const EventListPage(),
+        '/pledged-gifts': (context) => PledgedGiftsPage(eventId: 'sampleEventId'),
+        // Explicitly pass eventId
         // '/gift-list':(context)=> GiftListPage(userId: '',),// Future implementation
       },
     );

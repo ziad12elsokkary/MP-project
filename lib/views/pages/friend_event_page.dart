@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty3/models/event.dart';
+import 'package:hedieaty3/views/pages/friend_gift.dart'; // Import the gift list page
 
 class FriendEventsPage extends StatelessWidget {
   final String friendId;
@@ -12,7 +13,7 @@ class FriendEventsPage extends StatelessWidget {
     final firestore = FirebaseFirestore.instance;
     final eventsSnapshot = await firestore
         .collection('events')
-        .where('userId', isEqualTo: friendId)  // Filter events where userId matches the friendId
+        .where('userId', isEqualTo: friendId) // Filter events where userId matches the friendId
         .get();
 
     return eventsSnapshot.docs.map((doc) {
@@ -54,24 +55,35 @@ class FriendEventsPage extends StatelessWidget {
               itemCount: events.length,
               itemBuilder: (context, index) {
                 final event = events[index];
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Card(
-                    elevation: 2.0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Event Name:", style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(event.eventName),
-                          SizedBox(height: 4.0),
-                          Text("Date:", style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(event.eventDate.toLocal().toString().split(' ')[0]), // Display date in a readable format
-                          SizedBox(height: 4.0),
-                          Text("Status:", style: TextStyle(fontWeight: FontWeight.bold, color: getStatusColor(event.status))),
-                          Text(event.status, style: TextStyle(color: getStatusColor(event.status))),
-                        ],
+                return GestureDetector(
+                  onTap: () {
+                    // Navigate to EventGiftListPage when tapped
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EventGiftListPage(eventId: event.id, eventName: event.eventName),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Card(
+                      elevation: 2.0,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Event Name:", style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(event.eventName),
+                            SizedBox(height: 4.0),
+                            Text("Date:", style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(event.eventDate.toLocal().toString().split(' ')[0]), // Display date in a readable format
+                            SizedBox(height: 4.0),
+                            Text("Status:", style: TextStyle(fontWeight: FontWeight.bold, color: getStatusColor(event.status))),
+                            Text(event.status, style: TextStyle(color: getStatusColor(event.status))),
+                          ],
+                        ),
                       ),
                     ),
                   ),

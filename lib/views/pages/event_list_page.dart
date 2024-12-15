@@ -6,6 +6,7 @@ import 'package:hedieaty3/views/pages/event_add_page.dart';
 import 'package:hedieaty3/viewmodels/event_list_viewmodel.dart';
 import 'package:hedieaty3/views/pages/event_edit.dart';
 import 'package:hedieaty3/services/firebase_service.dart';
+import 'package:hedieaty3/views/pages/gift_list_page.dart';
 
 class EventListPage extends StatefulWidget {
   const EventListPage({super.key});
@@ -131,6 +132,14 @@ class _EventListPageState extends State<EventListPage> {
                           Text("Status: ${event['status']}"),
                         ],
                       ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GiftListPage(eventId: event['id']),
+                          ),
+                        );
+                      },
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -146,18 +155,19 @@ class _EventListPageState extends State<EventListPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => EventEditPage(eventId: event['id']), // Pass the Firestore document ID
+                                  builder: (context) => EventEditPage(eventId: event['id']),
                                 ),
                               ).then((updatedEvent) {
                                 if (updatedEvent != null) {
-                                  fetchUserEvents(); // Refresh the events list after an update
+                                  fetchUserEvents();
                                 }
                               });
                             },
                           ),
                         ],
                       ),
-                    ),
+                    )
+
                   );
                 },
               ),
