@@ -43,6 +43,8 @@ dependencies:
   google_sign_in: ^6.2.2
   provider: ^6.0.5
   image_picker: ^1.1.2
+  intl: ^0.20.1
+  sqflite: ^2.4.1
 
 dev_dependencies:
   flutter_test:
