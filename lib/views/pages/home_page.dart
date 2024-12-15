@@ -205,23 +205,21 @@ class _HomePageState extends State<HomePage> {
 
 
   // Count upcoming events for a friend
-  Future<int> _countUpcomingEvents(String friendId) async {
+  Future<int> _countUpcomingEvents(String friendid) async {
     try {
-      // Access the events subcollection within the specific friend's document
-      final eventsSnapshot = await _firestore
-          .collection('users')
-          .doc(friendId) // Get the document for the friend
-          .collection('events') // Access the events subcollection
-          .where('date', isGreaterThanOrEqualTo: DateTime.now()) // Filter upcoming events
+      // Access the global events collection
+      final eventsSnapshot = await FirebaseFirestore.instance
+          .collection('events') // Use the global events collection
+          .where('userId', isEqualTo: friendid) // Filter events by friend ID
+          .where('eventDate', isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now())) // Ensure date comparison uses Timestamp format
           .get();
 
-      return eventsSnapshot.size; // Return the number of events
+      return eventsSnapshot.size; // Return the number of matching events
     } catch (e) {
       print("Error counting upcoming events: $e");
       return 0; // Return 0 if there's an error
     }
   }
-
 
 
   // Navigate to the friend's events page

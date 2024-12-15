@@ -28,20 +28,18 @@ class _EventListPageState extends State<EventListPage> {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
         final userEvents = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .collection('events')
+            .collection('events') // Access the top-level `events` collection
+            .where('userId', isEqualTo: currentUser.uid) // Filter by userId
             .get();
 
         setState(() {
           events = userEvents.docs.map((doc) {
-            DateTime date = (doc['date'] as Timestamp).toDate();
+            DateTime date = (doc['eventDate'] as Timestamp).toDate(); // Ensure the key matches the updated structure
             String status = Event.determineStatus(date);
 
             return {
               'id': doc.id,
               'eventName': doc['eventName'],
-              'giftName': doc['giftName'],
               'date': date.toString(),
               'status': status,
             };
@@ -53,15 +51,16 @@ class _EventListPageState extends State<EventListPage> {
     }
   }
 
+
   Future<void> deleteEvent(String eventId, int index) async {
     try {
+      // Delete the event directly from the top-level `events` collection
       await FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser?.uid)
-          .collection('events')
-          .doc(eventId)
+          .collection('events') // Updated to target the new collection
+          .doc(eventId) // Use the event's document ID
           .delete();
 
+      // Remove the event from the local list
       setState(() {
         events.removeAt(index);
       });
@@ -69,6 +68,7 @@ class _EventListPageState extends State<EventListPage> {
       print("Error deleting event: $e");
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +127,6 @@ class _EventListPageState extends State<EventListPage> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Gift: ${event['giftName']}"),
                           Text("Date: ${event['date']}"),
                           Text("Status: ${event['status']}"),
                         ],

@@ -3,14 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Event {
   final String id;
   final String eventName;
-  final String giftName;
   final DateTime eventDate;
   String status; // New field for event status
 
   Event({
     required this.id,
     required this.eventName,
-    required this.giftName,
     required this.eventDate,
     this.status = "Upcoming", // Default status
   });
@@ -26,7 +24,6 @@ class Event {
     return Event(
       id: data['id'],
       eventName: data['eventName'],
-      giftName: data['giftName'],
       eventDate: parsedDate,
       status: determineStatus(parsedDate), // Assign status based on date
     );
@@ -36,7 +33,6 @@ class Event {
     return {
       'id': id,
       'eventName': eventName,
-      'giftName': giftName,
       'eventDate': eventDate.toIso8601String(), // Convert DateTime to ISO 8601 String
       'status': status,
     };

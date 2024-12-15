@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty3/viewmodels/event_list_viewmodel.dart';
 import 'package:hedieaty3/models/event.dart';
@@ -14,7 +15,6 @@ class EventEditPage extends StatefulWidget {
 class _EventEditPageState extends State<EventEditPage> {
   final _formKey = GlobalKey<FormState>();
   String _eventName = '';
-  String _giftName = '';
   DateTime _eventDate = DateTime.now();
   final EventListViewModel _viewModel = EventListViewModel();
 
@@ -29,22 +29,31 @@ class _EventEditPageState extends State<EventEditPage> {
     Event event = await _viewModel.getEventById(widget.eventId);
     setState(() {
       _eventName = event.eventName;
-      _giftName = event.giftName;
       _eventDate = event.eventDate;
     });
   }
 
   Future<void> _updateEvent() async {
     if (_formKey.currentState!.validate()) {
-      await _viewModel.updateEvent(
-        widget.eventId,
-        _eventName,
-        _giftName,
-        _eventDate,
-      );
-      Navigator.pop(context, true); // Return true to refresh events
+      try {
+        // Update the event in Firestore
+        await FirebaseFirestore.instance
+            .collection('events')
+            .doc(widget.eventId) // The ID of the event to update
+            .update({
+          'eventName': _eventName,
+          'eventDate': Timestamp.fromDate(_eventDate), // Update the existing eventDate field
+        });
+
+        // Return true to refresh events
+        Navigator.pop(context, true);
+      } catch (e) {
+        print("Error updating event: $e");
+      }
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -72,15 +81,6 @@ class _EventEditPageState extends State<EventEditPage> {
                 onChanged: (value) {
                   setState(() {
                     _eventName = value;
-                  });
-                },
-              ),
-              TextFormField(
-                initialValue: _giftName,
-                decoration: InputDecoration(labelText: "Gift Name"),
-                onChanged: (value) {
-                  setState(() {
-                    _giftName = value;
                   });
                 },
               ),

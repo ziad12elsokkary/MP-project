@@ -15,26 +15,19 @@ class AddEventViewModel {
       try {
         if (eventId == null) {
           // Adding a new event
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(currentUser.uid)
-              .collection('events')
-              .add({
+          await FirebaseFirestore.instance.collection('events').add({
             'eventName': eventName,
             'giftName': giftName,
-            'date': date,
+            'eventDate': Timestamp.fromDate(date!), // Ensure correct format
+            'userId': currentUser.uid, // Add the userId to associate with the user
           });
         } else {
           // Updating an existing event
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(currentUser.uid)
-              .collection('events')
-              .doc(eventId)
-              .update({
+          await FirebaseFirestore.instance.collection('events').doc(eventId).update({
             'eventName': eventName,
             'giftName': giftName,
-            'date': date,
+            'eventDate': Timestamp.fromDate(date!), // Ensure correct format
+            'userId': currentUser.uid, // Ensure userId is not removed
           });
         }
 

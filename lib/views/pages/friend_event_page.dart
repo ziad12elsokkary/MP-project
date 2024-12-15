@@ -10,12 +10,16 @@ class FriendEventsPage extends StatelessWidget {
 
   Future<List<Event>> fetchFriendEvents() async {
     final firestore = FirebaseFirestore.instance;
-    final eventsSnapshot = await firestore.collection('users').doc(friendId).collection('events').get();
+    final eventsSnapshot = await firestore
+        .collection('events')
+        .where('userId', isEqualTo: friendId)  // Filter events where userId matches the friendId
+        .get();
+
     return eventsSnapshot.docs.map((doc) {
       final data = doc.data();
       DateTime parsedDate;
       try {
-        parsedDate = DateTime.parse(data['eventDate']);
+        parsedDate = (data['date'] as Timestamp).toDate(); // Ensure date is parsed correctly
       } catch (e) {
         parsedDate = DateTime.now(); // Use current date if eventDate is null or invalid
       }
@@ -23,7 +27,6 @@ class FriendEventsPage extends StatelessWidget {
       return Event(
         id: doc.id,
         eventName: data['eventName'],
-        giftName: data['giftName'],
         eventDate: parsedDate,
         status: Event.determineStatus(parsedDate), // Determine event status
       );
@@ -62,9 +65,6 @@ class FriendEventsPage extends StatelessWidget {
                         children: [
                           Text("Event Name:", style: TextStyle(fontWeight: FontWeight.bold)),
                           Text(event.eventName),
-                          SizedBox(height: 4.0),
-                          Text("Gift:", style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(event.giftName),
                           SizedBox(height: 4.0),
                           Text("Date:", style: TextStyle(fontWeight: FontWeight.bold)),
                           Text(event.eventDate.toLocal().toString().split(' ')[0]), // Display date in a readable format

@@ -13,7 +13,6 @@ class AddEventPage extends StatefulWidget {
 
 class _AddEventPageState extends State<AddEventPage> {
   final TextEditingController eventNameController = TextEditingController();
-  final TextEditingController giftNameController = TextEditingController();
   DateTime? selectedDate;
 
   @override
@@ -21,7 +20,6 @@ class _AddEventPageState extends State<AddEventPage> {
     super.initState();
     if (widget.event != null) {
       eventNameController.text = widget.event!['eventName'];
-      giftNameController.text = widget.event!['giftName'];
       selectedDate = (widget.event!['date'] as Timestamp).toDate();
     }
   }
@@ -41,27 +39,23 @@ class _AddEventPageState extends State<AddEventPage> {
   }
 
   Future<void> modifyEvent() async {
-    if (selectedDate != null && eventNameController.text.isNotEmpty && giftNameController.text.isNotEmpty) {
+    if (selectedDate != null && eventNameController.text.isNotEmpty ) {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
         try {
           await FirebaseFirestore.instance
-              .collection('users')
-              .doc(currentUser.uid)
-              .collection('events')
-              .doc(widget.event!['id'])
+              .collection('events') // Use the top-level `events` collection
+              .doc(widget.event!['id']) // Use the event ID directly
               .update({
             'eventName': eventNameController.text,
-            'giftName': giftNameController.text,
-            'date': Timestamp.fromDate(selectedDate!),  // Update the date as a Timestamp
+            'eventDate': Timestamp.fromDate(selectedDate!), // Update the date
+            'userId': currentUser.uid, // Ensure userId is part of the document
           });
 
-          // Show a snackbar to indicate success
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Event updated successfully")),
           );
 
-          // Pop and return to EventListPage
           Navigator.pop(context, true);
         } catch (e) {
           print("Error modifying event: $e");
@@ -78,33 +72,27 @@ class _AddEventPageState extends State<AddEventPage> {
   }
 
   Future<void> addEvent() async {
-    if (selectedDate != null && eventNameController.text.isNotEmpty && giftNameController.text.isNotEmpty) {
+    if (selectedDate != null && eventNameController.text.isNotEmpty) {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
         try {
           await FirebaseFirestore.instance
-              .collection('users')
-              .doc(currentUser.uid)
-              .collection('events')
+              .collection('events') // Use the top-level `events` collection
               .add({
             'eventName': eventNameController.text,
-            'giftName': giftNameController.text,
-            'date': Timestamp.fromDate(selectedDate!),  // Store the date as a Timestamp
+            'eventDate': Timestamp.fromDate(selectedDate!), // Save the date
+            'userId': currentUser.uid, // Associate with the user
           });
 
-          // Clear the fields after adding the event
           eventNameController.clear();
-          giftNameController.clear();
           setState(() {
             selectedDate = null;
           });
 
-          // Show a snackbar to indicate success
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Event added successfully")),
           );
 
-          // Pop and return to HomePage with success flag
           Navigator.pop(context, true);
         } catch (e) {
           print("Error adding event: $e");
@@ -120,6 +108,7 @@ class _AddEventPageState extends State<AddEventPage> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,10 +123,7 @@ class _AddEventPageState extends State<AddEventPage> {
               controller: eventNameController,
               decoration: const InputDecoration(labelText: 'Event Name'),
             ),
-            TextField(
-              controller: giftNameController,
-              decoration: const InputDecoration(labelText: 'Gift Name'),
-            ),
+
             const SizedBox(height: 10),
             Row(
               children: [
