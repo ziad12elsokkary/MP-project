@@ -6,6 +6,7 @@ class Gift {
   final double price;
   String status; // "available" or "pledged"
   final String eventId;
+  String? pledgedBy; // Nullable field to track the user who pledged the gift
 
   Gift({
     required this.id,
@@ -13,8 +14,9 @@ class Gift {
     required this.description,
     required this.category,
     required this.price,
-    this.status = "Available",
+    this.status = "available", // Default to "available"
     required this.eventId,
+    this.pledgedBy, // Optional parameter
   });
 
   // Factory constructor to create a Gift object from Firestore data
@@ -27,6 +29,7 @@ class Gift {
       price: (json['price'] as num).toDouble(),
       status: json['status'] as String,
       eventId: json['eventId'] as String,
+      pledgedBy: json['pledgedBy'] as String?, // Map the pledgedBy field
     );
   }
 
@@ -39,6 +42,7 @@ class Gift {
       'price': price,
       'status': status,
       'eventId': eventId,
+      'pledgedBy': pledgedBy, // Include pledgedBy in the Firestore data
     };
   }
 }

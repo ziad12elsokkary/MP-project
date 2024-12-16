@@ -1,78 +1,81 @@
-// pledged_gifts_page.dart
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class PledgedGiftsPage extends StatelessWidget {
-  final String eventId;
+  // Extracts the user ID from the route arguments
+  String? _getUserId(BuildContext context) {
+    return ModalRoute.of(context)?.settings.arguments as String?;
+  }
 
-  const PledgedGiftsPage({Key? key, required this.eventId}) : super(key: key);
+  // Fetch pledged gifts for the specific user
+  Future<List<Map<String, dynamic>>> _fetchPledgedGifts(String userId) async {
+    try {
+      final giftsCollection = FirebaseFirestore.instance.collection('gifts');
+      final querySnapshot = await giftsCollection
+          .where('status', isEqualTo: 'pledged')
+          .where('pledgedBy', isEqualTo: userId)
+          .get();
 
-  Future<List<Map<String, dynamic>>> fetchPledgedGifts() async {
-    final firestore = FirebaseFirestore.instance;
-    final pledgedSnapshot = await firestore.collection('pledged_gifts').where('eventId', isEqualTo: eventId).get();
+      if (querySnapshot.docs.isEmpty) {
+        return []; // Return an empty list if no gifts are found
+      }
 
-    List<Map<String, dynamic>> pledgedGifts = [];
-    for (var doc in pledgedSnapshot.docs) {
-      final giftDoc = await firestore.collection('gifts').doc(doc['giftId']).get();
-      final friendDoc = await firestore.collection('users').doc(giftDoc['userId']).get(); // Adjust as needed
-      final eventDoc = await firestore.collection('events').doc(eventId).get();
-
-      pledgedGifts.add({
-        'giftName': giftDoc['name'],
-        'friendName': friendDoc['name'], // Adjust as needed
-        'eventDate': eventDoc['date'].toDate(), // Adjust as needed
-      });
+      return querySnapshot.docs
+          .map((doc) => {"id": doc.id, ...doc.data() as Map<String, dynamic>})
+          .toList();
+    } catch (e) {
+      print('Error fetching pledged gifts: $e');
+      return [];
     }
-
-    return pledgedGifts;
   }
 
   @override
   Widget build(BuildContext context) {
+    final userId = _getUserId(context);
+
+    if (userId == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Pledged Gifts'),
+        ),
+        body: Center(child: Text('No user ID found')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Pledged Gifts"),
+        title: Text('Pledged Gifts'),
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchPledgedGifts(),
+        future: _fetchPledgedGifts(userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No pledged gifts found.'));
-          } else {
-            final pledgedGifts = snapshot.data!;
-            return ListView.builder(
-              itemCount: pledgedGifts.length,
-              itemBuilder: (context, index) {
-                final gift = pledgedGifts[index];
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Card(
-                    elevation: 2.0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Gift Name:", style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(gift['giftName']),
-                          SizedBox(height: 4.0),
-                          Text("Friend:", style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(gift['friendName']),
-                          SizedBox(height: 4.0),
-                          Text("Event Date:", style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text("${gift['eventDate']}"),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
           }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error loading gifts. Please try again later.'));
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No pledged gifts found.'));
+          }
+
+          final gifts = snapshot.data!;
+
+          return ListView.builder(
+            itemCount: gifts.length,
+            itemBuilder: (context, index) {
+              final gift = gifts[index];
+              return ListTile(
+                title: Text(gift['name'] ?? 'Gift Name'),
+                subtitle: Text(gift['description'] ?? 'No description available'),
+                trailing: Text(gift['status'] ?? ''),
+                onTap: () {
+                  // Navigate to gift details or perform another action
+                  print('Selected Gift ID: ${gift['id']}');
+                },
+              );
+            },
+          );
         },
       ),
     );

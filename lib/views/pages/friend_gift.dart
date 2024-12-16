@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hedieaty3/models/gift.dart';
-import 'package:hedieaty3/views/pages/pledged_gifts_page.dart'; // Adjust import path as necessary
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EventGiftListPage extends StatelessWidget {
   final String eventId;
@@ -11,24 +11,12 @@ class EventGiftListPage extends StatelessWidget {
 
   Future<void> updateGiftStatus(String giftId, bool isPledged) async {
     final firestore = FirebaseFirestore.instance;
+    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
     await firestore.collection('gifts').doc(giftId).update({
       'status': isPledged ? 'pledged' : 'available',
+      'pledgedBy': isPledged ? currentUserId : null, // Track who pledged it
     });
-
-    if (isPledged) {
-      // Save pledged gift details to a "pledged_gifts" collection
-      await firestore.collection('pledged_gifts').add({
-        'giftId': giftId,
-        'eventId': eventId,
-        'timestamp': Timestamp.now(),
-      });
-    } else {
-      // Remove from "pledged_gifts" collection if marked as available
-      final pledgedGifts = await firestore.collection('pledged_gifts').where('giftId', isEqualTo: giftId).get();
-      for (var doc in pledgedGifts.docs) {
-        await firestore.collection('pledged_gifts').doc(doc.id).delete();
-      }
-    }
   }
 
   Future<List<Gift>> fetchGiftsForEvent() async {
@@ -43,28 +31,10 @@ class EventGiftListPage extends StatelessWidget {
     }).toList();
   }
 
-  Future<List<Map<String, dynamic>>> fetchPledgedGifts() async {
-    final firestore = FirebaseFirestore.instance;
-    final pledgedSnapshot = await firestore.collection('pledged_gifts').where('eventId', isEqualTo: eventId).get();
-
-    List<Map<String, dynamic>> pledgedGifts = [];
-    for (var doc in pledgedSnapshot.docs) {
-      final giftDoc = await firestore.collection('gifts').doc(doc['giftId']).get();
-      final friendDoc = await firestore.collection('users').doc(giftDoc['userId']).get(); // Adjust as needed
-      final eventDoc = await firestore.collection('events').doc(eventId).get();
-
-      pledgedGifts.add({
-        'giftName': giftDoc['name'],
-        'friendName': friendDoc['name'], // Adjust as needed
-        'eventDate': eventDoc['date'].toDate(), // Adjust as needed
-      });
-    }
-
-    return pledgedGifts;
-  }
-
   @override
   Widget build(BuildContext context) {
+    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Gifts for $eventName"),
@@ -84,6 +54,11 @@ class EventGiftListPage extends StatelessWidget {
               itemCount: gifts.length,
               itemBuilder: (context, index) {
                 final gift = gifts[index];
+
+                // Determine if the checkbox should be visible
+                final isCheckboxVisible =
+                    (gift.status == 'available') || (gift.status == 'pledged' && gift.pledgedBy == currentUserId);
+
                 return Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Card(
@@ -102,15 +77,18 @@ class EventGiftListPage extends StatelessWidget {
                           Text("Status:", style: TextStyle(fontWeight: FontWeight.bold, color: getStatusColor(gift.status))),
                           Text(gift.status, style: TextStyle(color: getStatusColor(gift.status))),
                           SizedBox(height: 4.0),
-                          CheckboxListTile(
-                            value: gift.status == 'pledged',
-                            onChanged: (bool? value) {
-                              if (value != null) {
-                                updateGiftStatus(gift.id, value);
-                              }
-                            },
-                            title: Text('Pledged'),
-                          ),
+
+                          // Conditionally display the CheckboxListTile
+                          if (isCheckboxVisible)
+                            CheckboxListTile(
+                              value: gift.status == 'pledged',
+                              onChanged: (bool? value) {
+                                if (value != null) {
+                                  updateGiftStatus(gift.id, value);
+                                }
+                              },
+                              title: Text('Pledged'),
+                            ),
                         ],
                       ),
                     ),

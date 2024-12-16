@@ -39,8 +39,7 @@ class MyApp extends StatelessWidget {
         ), // New route for editing profile
         '/add-event': (context) => const AddEventPage(),
         '/event-list': (context) => const EventListPage(),
-        '/pledged-gifts': (context) => PledgedGiftsPage(eventId: 'sampleEventId'),
-        // Explicitly pass eventId
+        '/pledged-gifts': (context) => PledgedGiftsPage(),
         // '/gift-list':(context)=> GiftListPage(userId: '',),// Future implementation
       },
     );
