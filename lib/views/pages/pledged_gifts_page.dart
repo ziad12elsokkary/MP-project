@@ -1,80 +1,123 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class PledgedGiftsPage extends StatelessWidget {
-  // Extracts the user ID from the route arguments
-  String? _getUserId(BuildContext context) {
-    return ModalRoute.of(context)?.settings.arguments as String?;
-  }
+class PledgedGiftsPage extends StatefulWidget {
+  @override
+  _PledgedGiftsPageState createState() => _PledgedGiftsPageState();
+}
 
-  // Fetch pledged gifts for the specific user
-  Future<List<Map<String, dynamic>>> _fetchPledgedGifts(String userId) async {
+class _PledgedGiftsPageState extends State<PledgedGiftsPage> {
+  List<Map<String, dynamic>> pledgedGifts = [];
+  bool isLoading = true;
+
+  // Fetch pledged gifts with event and user details
+  Future<void> _fetchPledgedGiftsWithDetails() async {
     try {
-      final giftsCollection = FirebaseFirestore.instance.collection('gifts');
-      final querySnapshot = await giftsCollection
-          .where('status', isEqualTo: 'pledged')
-          .where('pledgedBy', isEqualTo: userId)
-          .get();
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        // Query gifts pledged by the current user
+        final giftsQuery = await FirebaseFirestore.instance
+            .collection('gifts')
+            .where('pledgedBy', isEqualTo: currentUser.uid)
+            .get();
 
-      if (querySnapshot.docs.isEmpty) {
-        return []; // Return an empty list if no gifts are found
+        final List<Map<String, dynamic>> giftsWithDetails = [];
+
+        for (var giftDoc in giftsQuery.docs) {
+          final giftData = giftDoc.data();
+          final eventId = giftData['eventId'];
+
+          // Fetch event details
+          final eventDoc = await FirebaseFirestore.instance
+              .collection('events')
+              .doc(eventId)
+              .get();
+
+          if (eventDoc.exists) {
+            final eventData = eventDoc.data();
+            final userId = eventData?['userId'];
+            final eventDate = (eventData?['eventDate'] as Timestamp?)?.toDate();
+
+            // Fetch user details
+            final userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .get();
+
+            if (userDoc.exists) {
+              final userData = userDoc.data();
+              final userName = userData?['name'];
+
+              // Combine gift, event, and user details
+              giftsWithDetails.add({
+                'giftName': giftData['name'] ?? 'Unnamed Gift',
+                'eventDate': eventDate,
+                'userName': userName ?? 'Unknown User',
+              });
+            }
+          }
+        }
+
+        setState(() {
+          pledgedGifts = giftsWithDetails;
+          isLoading = false;
+        });
       }
-
-      return querySnapshot.docs
-          .map((doc) => {"id": doc.id, ...doc.data() as Map<String, dynamic>})
-          .toList();
     } catch (e) {
-      print('Error fetching pledged gifts: $e');
-      return [];
+      print('Error fetching gifts with details: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   @override
+  void initState() {
+    super.initState();
+    _fetchPledgedGiftsWithDetails();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final userId = _getUserId(context);
-
-    if (userId == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Pledged Gifts'),
-        ),
-        body: Center(child: Text('No user ID found')),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pledged Gifts'),
+        title: const Text('Pledged Gifts'),
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _fetchPledgedGifts(userId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error loading gifts. Please try again later.'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No pledged gifts found.'));
-          }
-
-          final gifts = snapshot.data!;
-
-          return ListView.builder(
-            itemCount: gifts.length,
-            itemBuilder: (context, index) {
-              final gift = gifts[index];
-              return ListTile(
-                title: Text(gift['name'] ?? 'Gift Name'),
-                subtitle: Text(gift['description'] ?? 'No description available'),
-                trailing: Text(gift['status'] ?? ''),
-                onTap: () {
-                  // Navigate to gift details or perform another action
-                  print('Selected Gift ID: ${gift['id']}');
-                },
-              );
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : pledgedGifts.isEmpty
+          ? const Center(child: Text('No pledged gifts found.'))
+          : ListView.builder(
+        itemCount: pledgedGifts.length,
+        itemBuilder: (context, index) {
+          final gift = pledgedGifts[index];
+          return GestureDetector(
+            onTap: () {
+              // Handle gift tap (e.g., navigate to gift details page)
             },
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Card(
+                elevation: 2.0,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Gift Name:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(gift['giftName']),
+                      SizedBox(height: 4.0),
+                      Text("Event Date:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(gift['eventDate']?.toLocal().toString().split(' ')[0] ?? 'Unknown Date'),
+                      SizedBox(height: 4.0),
+                      Text("Event Owner:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(gift['userName']),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           );
         },
       ),
