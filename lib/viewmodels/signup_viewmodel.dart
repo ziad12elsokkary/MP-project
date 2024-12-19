@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hedieaty3/services/firebase_service.dart';
+import 'package:hedieaty3/services/local_database_service.dart';
 import 'package:hedieaty3/utils/constants.dart';
 import 'package:hedieaty3/views/pages/home_page.dart';
 
@@ -7,7 +8,8 @@ class SignupViewModel extends ChangeNotifier {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController(); // Phone controller
+  final TextEditingController phoneController = TextEditingController();
+  final DatabaseService _databaseService = DatabaseService();
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
@@ -17,8 +19,12 @@ class SignupViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Sign up method
   void signupUser(BuildContext context) async {
+    if (nameController.text.isEmpty || emailController.text.isEmpty || phoneController.text.isEmpty) {
+      showSnackBar(context, "All fields are required");
+      return;
+    }
+
     _setLoading(true);
 
     String res = await AuthMethod().signupUser(
@@ -26,28 +32,35 @@ class SignupViewModel extends ChangeNotifier {
       password: passwordController.text,
       name: nameController.text,
       phone: phoneController.text,
-      profilePic: null, // Include phone number during signup
+      profilePic: null,
     );
 
-    _setLoading(false);
-
     if (res == "success") {
+      Map<String, dynamic> userData = {
+        'ID': emailController.text,
+        'name': nameController.text,
+        'email': emailController.text,
+        'phone': phoneController.text,
+        'imageurl': null,
+      };
+
+      try {
+        await _databaseService.insertUser(userData);
+      } catch (e) {
+        showSnackBar(context, "Failed to save user locally: $e");
+        _setLoading(false);
+        return;
+      }
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) =>  HomePage(),
+          builder: (context) => const HomePage(),
         ),
       );
     } else {
-      showSnackBar(context, res); // Show error message
+      showSnackBar(context, res);
     }
-  }
 
-  @override
-  void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    phoneController.dispose(); // Dispose phone controller as well
-    super.dispose();
+    _setLoading(false);
   }
 }

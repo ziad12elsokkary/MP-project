@@ -1,9 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:hedieaty3/views/pages/login_page.dart';
 import 'package:hedieaty3/services/firebase_service.dart';
-import 'package:hedieaty3/views/pages/home_page.dart';
 import 'package:hedieaty3/utils/constants.dart';
+import 'package:hedieaty3/views/pages/home_page.dart';
+import 'package:hedieaty3/views/pages/login_page.dart';
+import 'package:hedieaty3/services/helper.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -16,7 +16,7 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController(); // Controller for phone number
+  final TextEditingController phoneController = TextEditingController();
   bool isLoading = false;
 
   @override
@@ -25,10 +25,32 @@ class _SignupPageState extends State<SignupPage> {
     emailController.dispose();
     passwordController.dispose();
     nameController.dispose();
-    phoneController.dispose(); // Dispose the phone controller
+    phoneController.dispose();
+  }
+
+  Future<void> saveUserLocally() async {
+    final user = {
+      'ID': emailController.text,
+      'name': nameController.text,
+      'email': emailController.text,
+      'phone': phoneController.text,
+      'imageurl': null,
+    };
+
+    try {
+      await LocalDatabaseHelper().insertUser(user);
+      debugPrint('User saved locally: $user');
+    } catch (e) {
+      debugPrint('Failed to save user locally: $e');
+    }
   }
 
   void signupUser() async {
+    if (nameController.text.isEmpty || emailController.text.isEmpty || phoneController.text.isEmpty) {
+      showSnackBar(context, "All fields are required");
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
@@ -38,7 +60,7 @@ class _SignupPageState extends State<SignupPage> {
       password: passwordController.text,
       name: nameController.text,
       phone: phoneController.text,
-      profilePic: null, // Pass phone number to the signup method
+      profilePic: null,
     );
 
     setState(() {
@@ -46,13 +68,14 @@ class _SignupPageState extends State<SignupPage> {
     });
 
     if (res == "success") {
+      await saveUserLocally();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) =>  HomePage(),
+          builder: (context) => const HomePage(),
         ),
       );
     } else {
-      showSnackBar(context, res); // Show error message if signup fails
+      showSnackBar(context, res);
     }
   }
 
@@ -66,9 +89,7 @@ class _SignupPageState extends State<SignupPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(
-                height: height / 2.8,
-              ),
+              SizedBox(height: height / 2.8),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 child: TextField(
@@ -142,7 +163,7 @@ class _SignupPageState extends State<SignupPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 child: TextField(
-                  controller: phoneController, // Phone number input
+                  controller: phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.phone, color: Colors.black54),
