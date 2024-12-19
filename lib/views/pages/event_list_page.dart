@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hedieaty3/models/event.dart';
 import 'package:hedieaty3/views/pages/event_add_page.dart';
 import 'package:hedieaty3/viewmodels/event_list_viewmodel.dart';
+import 'package:hedieaty3/views/pages/event_edit.dart';
+import 'package:hedieaty3/services/firebase_service.dart';
+import 'package:hedieaty3/views/pages/gift_list_page.dart';
+
 class EventListPage extends StatefulWidget {
   const EventListPage({super.key});
 
@@ -19,24 +24,25 @@ class _EventListPageState extends State<EventListPage> {
     fetchUserEvents();
   }
 
-  // Fetch events for the logged-in user from Firestore
   Future<void> fetchUserEvents() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
         final userEvents = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .collection('events')
+            .collection('events') // Access the top-level `events` collection
+            .where('userId', isEqualTo: currentUser.uid) // Filter by userId
             .get();
 
         setState(() {
           events = userEvents.docs.map((doc) {
+            DateTime date = (doc['eventDate'] as Timestamp).toDate(); // Ensure the key matches the updated structure
+            String status = Event.determineStatus(date);
+
             return {
               'id': doc.id,
               'eventName': doc['eventName'],
-              'giftName': doc['giftName'],
-              'date': (doc['date'] as Timestamp).toDate().toString(),
+              'date': date.toString(),
+              'status': status,
             };
           }).toList();
         });
@@ -46,14 +52,24 @@ class _EventListPageState extends State<EventListPage> {
     }
   }
 
-  // Handle menu item selection for profile and pledged gifts
-  // void handleMenuSelection(BuildContext context, String value) {
-  //   if (value == "profile") {
-  //     Navigator.pushNamed(context, '/profile');
-  //   } else if (value == "pledged_gifts") {
-  //     Navigator.pushNamed(context, '/pledged-gifts');
-  //   }
-  // }
+
+  Future<void> deleteEvent(String eventId, int index) async {
+    try {
+      // Delete the event directly from the top-level `events` collection
+      await FirebaseFirestore.instance
+          .collection('events') // Updated to target the new collection
+          .doc(eventId) // Use the event's document ID
+          .delete();
+
+      // Remove the event from the local list
+      setState(() {
+        events.removeAt(index);
+      });
+    } catch (e) {
+      print("Error deleting event: $e");
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -109,25 +125,49 @@ class _EventListPageState extends State<EventListPage> {
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     child: ListTile(
                       title: Text(event['eventName']),
-                      subtitle: Text(event['date']),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () {
-                          // Delete event from Firestore using event ID
-                          FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(FirebaseAuth.instance.currentUser?.uid)
-                              .collection('events')
-                              .doc(event['id'])  // Use event ID
-                              .delete()
-                              .then((_) {
-                            setState(() {
-                              events.removeAt(index);
-                            });
-                          });
-                        },
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Date: ${event['date']}"),
+                          Text("Status: ${event['status']}"),
+                        ],
                       ),
-                    ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GiftListPage(eventId: event['id']),
+                          ),
+                        );
+                      },
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              deleteEvent(event['id'], index);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EventEditPage(eventId: event['id']),
+                                ),
+                              ).then((updatedEvent) {
+                                if (updatedEvent != null) {
+                                  fetchUserEvents();
+                                }
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    )
+
                   );
                 },
               ),
@@ -137,18 +177,33 @@ class _EventListPageState extends State<EventListPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // When returning from AddEventPage, the page will be refreshed
           bool eventAdded = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddEventPage()),
           );
 
           if (eventAdded) {
-            fetchUserEvents();  // Refresh the events list after adding an event
+            fetchUserEvents(); // Refresh the events list after adding an event
           }
         },
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  void handleMenuSelection(BuildContext context, String value) {
+    switch (value) {
+      case "profile":
+        Navigator.pushNamed(context, '/profile');
+        break;
+      case "pledged_gifts":
+        Navigator.pushNamed(context, '/pledged-gifts');
+        break;
+      case "your_events":
+        Navigator.pushNamed(context, '/event-list');
+        break;
+      default:
+        break;
+    }
   }
 }
