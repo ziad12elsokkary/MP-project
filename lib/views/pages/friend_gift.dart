@@ -9,21 +9,52 @@ class EventGiftListPage extends StatelessWidget {
 
   const EventGiftListPage({Key? key, required this.eventId, required this.eventName}) : super(key: key);
 
-  Future<void> updateGiftStatus(String giftId, bool isPledged) async {
+  Future<void> updateGiftStatus(String giftId, bool isPledged, String giftName) async {
     final firestore = FirebaseFirestore.instance;
     final currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
-    await firestore.collection('gifts').doc(giftId).update({
-      'status': isPledged ? 'pledged' : 'available',
-      'pledgedBy': isPledged ? currentUserId : null, // Track who pledged it
-    });
+    try {
+      // Get the eventId from the gift
+      final giftDoc = await firestore.collection('gifts').doc(giftId).get();
+      if (!giftDoc.exists) throw Exception("Gift not found");
+
+      final eventId = giftDoc['eventId'];
+
+      // Get the userId (event owner) from the event
+      final eventDoc = await firestore.collection('events').doc(eventId).get();
+      if (!eventDoc.exists) throw Exception("Event not found");
+
+      final friendId = eventDoc['userId'];
+
+      // Update the gift's status
+      await firestore.collection('gifts').doc(giftId).update({
+        'status': isPledged ? 'pledged' : 'available',
+        'pledgedBy': isPledged ? currentUserId : null,
+      });
+
+      // Add a notification for the friend (event owner)
+      if (isPledged) {
+        final notificationMessage = 'Your friend has pledged "$giftName"!';
+        await firestore.collection('notifications').add({
+          'recipientId': friendId,
+          'message': notificationMessage,
+          'timestamp': FieldValue.serverTimestamp(),
+          'giftId': giftId,
+          'giftName': giftName,
+          'pledgedBy': currentUserId,
+          'seen': false, // Default to not seen
+        });
+      }
+    } catch (e) {
+      print("Error updating gift status or sending notification: $e");
+    }
   }
 
   Future<List<Gift>> fetchGiftsForEvent() async {
     final firestore = FirebaseFirestore.instance;
     final giftsSnapshot = await firestore
         .collection('gifts')
-        .where('eventId', isEqualTo: eventId) // Filter gifts by eventId
+        .where('eventId', isEqualTo: eventId)
         .get();
 
     return giftsSnapshot.docs.map((doc) {
@@ -31,10 +62,56 @@ class EventGiftListPage extends StatelessWidget {
     }).toList();
   }
 
+  Future<void> _markNotificationAsSeen(String notificationId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notificationId)
+          .update({'seen': true});
+    } catch (e) {
+      print("Error marking notification as seen: $e");
+    }
+  }
+
+  void _listenForNotifications(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      FirebaseFirestore.instance
+          .collection('notifications')
+          .where('recipientId', isEqualTo: userId)
+          .where('seen', isEqualTo: false)
+          .orderBy('timestamp', descending: true)
+          .snapshots()
+          .listen((snapshot) {
+        for (var doc in snapshot.docs) {
+          final notificationId = doc.id;
+          final notificationMessage = doc['message'];
+
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Notification"),
+                content: Text(notificationMessage),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      _markNotificationAsSeen(notificationId);
+                      Navigator.pop(context);
+                    },
+                    child: Text("Dismiss"),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-
     return Scaffold(
       appBar: AppBar(
         title: Text("Gifts for $eventName"),
@@ -57,7 +134,7 @@ class EventGiftListPage extends StatelessWidget {
 
                 // Determine if the checkbox should be visible
                 final isCheckboxVisible =
-                    (gift.status == 'available') || (gift.status == 'pledged' && gift.pledgedBy == currentUserId);
+                    (gift.status == 'available') || (gift.status == 'pledged' && gift.pledgedBy == FirebaseAuth.instance.currentUser!.uid);
 
                 return Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -84,7 +161,7 @@ class EventGiftListPage extends StatelessWidget {
                               value: gift.status == 'pledged',
                               onChanged: (bool? value) {
                                 if (value != null) {
-                                  updateGiftStatus(gift.id, value);
+                                  updateGiftStatus(gift.id, value, gift.name);
                                 }
                               },
                               title: Text('Pledged'),
