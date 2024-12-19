@@ -93,21 +93,6 @@ class AuthMethod {
     }
     return res;
   }
-  //
-  // Future<void> signOut({Function? onSignOutSuccess, Function? onSignOutError}) async {
-  //   try {
-  //     await _auth.signOut();
-  //     if (onSignOutSuccess != null) {
-  //       onSignOutSuccess(); // Trigger success callback
-  //     }
-  //   } catch (e) {
-  //     if (onSignOutError != null) {
-  //       onSignOutError(e); // Trigger error callback
-  //     } else {
-  //       print("Error during sign out: $e");
-  //     }
-  //   }
-  // }
   // Sign-out function
   Future<void> signOut(Function onSuccess, Function(String) onError) async {
     try {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hedieaty3/models/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hedieaty3/services/helper.dart'; // Import the local database helper
 
 class EditProfilePage extends StatefulWidget {
   final UserModel userModel;
@@ -25,18 +26,37 @@ class _EditProfilePageState extends State<EditProfilePage> {
         text: widget.userModel.profilePictureUrl ?? '');
   }
 
-  void _updateProfile() async {
+  Future<void> _updateProfile() async {
     try {
-      await FirebaseFirestore.instance.collection('users').doc(widget.userModel.uid).update({
+      // Firestore Update
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userModel.uid)
+          .update({
         'name': nameController.text,
         'phone': phoneController.text,
         'profilePictureUrl': profilePictureUrlController.text,
       });
-      Navigator.pop(context, true); // Return to ProfilePage with success
+
+      // Local Database Update
+      final updatedUser = {
+        'uid': widget.userModel.uid,
+        'name': nameController.text,
+        'email': widget.userModel.email, // Keep email unchanged
+        'phone': phoneController.text,
+        'profilePictureUrl': profilePictureUrlController.text,
+      };
+
+      await LocalDatabaseHelper().updateUser(widget.userModel.uid, updatedUser);
+
+      Navigator.pop(context, true); // Success - Return to the previous screen
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +78,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               TextField(
                 controller: profilePictureUrlController,
-                decoration: const InputDecoration(labelText: "Profile Picture URL"),
+                decoration:
+                const InputDecoration(labelText: "Profile Picture URL"),
                 keyboardType: TextInputType.url,
               ),
               const SizedBox(height: 16),
