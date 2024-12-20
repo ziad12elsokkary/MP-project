@@ -371,7 +371,12 @@ class _HomePageState extends State<HomePage> {
           ),
           ElevatedButton(
             onPressed: _addFriendDialog,
+    style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.blueGrey, // background color
+    foregroundColor: Colors.white, // text color
+    ),
             child: const Icon(Icons.person_add),
+
           ),
         ],
       ),

@@ -30,10 +30,9 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(
-                height: height / 2.8,
-                // Add a logo or welcome text here
-              ),
+              const SizedBox(height: 250),
+              Icon(Icons.login , size: 120, color: Colors.blue ,),
+              const SizedBox(height: 30),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 child: TextField(
