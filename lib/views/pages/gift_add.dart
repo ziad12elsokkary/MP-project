@@ -105,19 +105,6 @@ class _GiftAddPageState extends State<GiftAddPage> {
                   return null;
                 },
               ),
-              // DropdownButtonFormField<String>(
-              //   value: _status,
-              //   decoration: const InputDecoration(labelText: 'Status'),
-              //   items: [
-              //     DropdownMenuItem(value: 'available', child: Text('Available')),
-              //     DropdownMenuItem(value: 'pledged', child: Text('Pledged')),
-              //   ],
-              //   onChanged: (value) {
-              //     setState(() {
-              //       _status = value!;
-              //     });
-              //   },
-              // ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _addGift,

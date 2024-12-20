@@ -9,24 +9,6 @@ class EventListViewModel {
 
   List<Event> events = [];
 
-  // Future<void> fetchEvents() async {
-  //   final User? currentUser = _auth.currentUser;
-  //   if (currentUser != null) {
-  //     try {
-  //       final snapshot = await _firestore
-  //           .collection('events')
-  //           .where('userId', isEqualTo: currentUser.uid)
-  //           .get();
-  //
-  //       events = snapshot.docs.map((doc) {
-  //         return Event.fromMap(doc.data());
-  //       }).toList();
-  //     } catch (e) {
-  //       print("Error fetching events: $e");
-  //     }
-  //   }
-  // }
-
   Future<void> deleteEvent(String eventId) async {
     try {
       await _firestore.collection('events').doc(eventId).delete();
