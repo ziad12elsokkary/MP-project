@@ -20,7 +20,7 @@ class FriendEventsPage extends StatelessWidget {
       final data = doc.data();
       DateTime parsedDate;
       try {
-        parsedDate = (data['date'] as Timestamp).toDate(); // Ensure date is parsed correctly
+        parsedDate = (data['eventDate'] as Timestamp).toDate(); // Ensure date is parsed correctly
       } catch (e) {
         parsedDate = DateTime.now(); // Use current date if eventDate is null or invalid
       }

@@ -195,10 +195,11 @@ class _HomePageState extends State<HomePage> {
 
   Future<int> _countUpcomingEvents(String friendId) async {
     try {
+
       final eventsSnapshot = await _firestore
           .collection('events')
           .where('userId', isEqualTo: friendId)
-          .where('eventDate', isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now()))
+          .where('eventDate', isGreaterThanOrEqualTo: DateTime.now())
           .get();
 
       return eventsSnapshot.size;
