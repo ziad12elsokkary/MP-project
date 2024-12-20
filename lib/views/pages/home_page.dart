@@ -99,6 +99,7 @@ class _HomePageState extends State<HomePage> {
         return AlertDialog(
           title: const Text("Add Friend"),
           content: TextField(
+            key: Key('addnumber'),
             controller: phoneController,
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(hintText: "Enter phone number"),

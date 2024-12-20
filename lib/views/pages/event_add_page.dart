@@ -113,12 +113,13 @@ class _AddEventPageState extends State<AddEventPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: widget.event == null ? const Text("Add Event") : const Text("Edit Event"),
+        title: widget.event == null ? const Text("Add Events") : const Text("Edit Event"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            Text("New"),
             TextField(
               controller: eventNameController,
               decoration: const InputDecoration(labelText: 'Event Name'),
@@ -127,6 +128,7 @@ class _AddEventPageState extends State<AddEventPage> {
             const SizedBox(height: 10),
             Row(
               children: [
+                const SizedBox(height: 20),
                 Text(selectedDate == null
                     ? "Select Event Date"
                     : "${selectedDate?.toLocal()}".split(' ')[0]),

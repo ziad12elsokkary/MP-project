@@ -49,6 +49,22 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     // Verify successful login by checking for a unique element on the HomePage
-    expect(find.byType(HomePage), findsOneWidget); // Adjust this based on HomePage content
+    expect(find.byType(HomePage), findsOneWidget);
+
+    //////test fails due to time taken by profile page to display the data
+    // final popupMenuButton = find.byType(PopupMenuButton<String>);
+    // await tester.tap(popupMenuButton);
+    // await tester.pumpAndSettle();
+    //
+    // final yourEventsOption = find.text("Profile");
+    // await tester.tap(yourEventsOption);
+    // await tester.pumpAndSettle(const Duration(seconds: 10));
+    //
+    // expect(find.text("ziad66"), findsOneWidget);
+    //
+    // final logoutButton = find.text("Logout");
+    // await tester.tap(logoutButton);
+    // await tester.pumpAndSettle(const Duration(seconds: 2));
+
   });
 }
