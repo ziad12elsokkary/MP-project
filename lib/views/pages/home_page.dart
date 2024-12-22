@@ -199,7 +199,6 @@ class _HomePageState extends State<HomePage> {
       final eventsSnapshot = await _firestore
           .collection('events')
           .where('userId', isEqualTo: friendId)
-          .where('eventDate', isGreaterThanOrEqualTo: DateTime.now())
           .get();
 
       return eventsSnapshot.size;
@@ -347,7 +346,7 @@ class _HomePageState extends State<HomePage> {
                       if (snapshot.hasData) {
                         int eventCount = snapshot.data!;
                         eventCountText = eventCount > 0
-                            ? "$eventCount upcoming events"
+                            ? "$eventCount event"
                             : "No upcoming events";
                       } else {
                         eventCountText = "Loading...";
